@@ -32,17 +32,14 @@ export class App implements OnInit {
       scope: ['identify', 'guilds'],
     });
 
-    // Retrieve active profile identities out from the active embedded frame instance
-    const userResponse = await fetch(`https://discord.com`, {
-      headers: { Authorization: `Bearer ${auth.code}` }
-    });
+    // Retrieve active profile 
+    const userResponse = await fetch(`https://discord.com/api/users/@me`, {headers: { Authorization: `Bearer ${auth.code}`}});
     const userData = await userResponse.json();
-
-    // Construct valid Avatar Asset URLs referencing standard Discord CDN servers
-    const avatarUrl = userData.avatar 
-      ? `https://discordapp.com{userData.id}/${userData.avatar}.png`
-      : `https://discordapp.com{Number(userData.discriminator) % 5}.png`;
-
+   // Construct valid Avatar Asset URLs 
+   const avatarUrl = userData.avatar ? `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`
+    : userData.discriminator === '0' 
+    ? `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(userData.id) >> 22n) % 6}.png`
+    : `https://cdn.discordapp.com/embed/avatars/${Number(userData.discriminator) % 5}.png`; 
     // Bind authenticated client session details to WebSocket stream instances
     this.gameService.registerPlayerIdentity(avatarUrl);
   }
