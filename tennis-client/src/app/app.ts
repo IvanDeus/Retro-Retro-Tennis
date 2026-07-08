@@ -3,19 +3,18 @@ import { DiscordSDK } from '@discord/embedded-app-sdk';
 import { GameService } from './game.service';
 import { rrtComponent } from './rrt.component';
 
-@Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [rrtComponent],
-  template: `<app-rrt></app-rrt>`
-})
-
 declare global {
   interface Window {
     DISCORD_CLIENT_ID: string;
   }
 }
 
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [rrtComponent],
+  template: `<app-rrt></app-rrt>`
+})
 export class App implements OnInit {
   private gameService = inject(GameService);
   private discordSdk = new DiscordSDK(window.DISCORD_CLIENT_ID);
