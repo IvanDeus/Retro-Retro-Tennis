@@ -4,6 +4,7 @@ const express = require('express');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const PORT = parseInt(process.env.PORT) || 3001;
+const path = require('path');
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
@@ -83,18 +84,25 @@ io.on('connection', (socket) => {
   });
 });
 // GET ONLY favicon & css & js from www/
-const allowedPaths = new Set([
-  '/index.html',
-  '/favicon.ico',
-]);
+// 1. Whitelist middleware (only allow safe files)
 const staticWhitelist = (req, res, next) => {
-  if (allowedPaths.has(req.path) || 
-      /\.(js|css)$/i.test(req.path)) {
+  const ext = path.extname(req.path).toLowerCase();
+  const basename = path.basename(req.path).toLowerCase();
+
+  const allowedExtensions = ['.js', '.css', '.ico', '.html'];
+  const allowedFiles = ['index.html', 'favicon.ico'];
+
+  if (allowedFiles.includes(basename) || allowedExtensions.includes(ext)) {
     return next();
   }
-  return res.status(404).end();
+  return res.status(404).send('Not Found');
 };
+// 2. Serve static files (this must come BEFORE any catch-all)
 app.use(staticWhitelist, express.static('./www'));
+// 3. Fallback to index.html for SPA / clean URLs (this must come AFTER static)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'www', 'index.html'));
+});
 
 console.log("Discord Tennis Game Activity Server is ON! Port :", PORT);
 httpServer.listen(PORT);
