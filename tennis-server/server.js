@@ -82,8 +82,19 @@ io.on('connection', (socket) => {
     winner = null;
   });
 });
-// GET favicon & css & js from www/
-app.use(/\.(css|js|ico|html)$/, express.static('./www'));
+// GET ONLY favicon & css & js from www/
+const allowedPaths = new Set([
+  '/index.html',
+  '/favicon.ico',
+]);
+const staticWhitelist = (req, res, next) => {
+  if (allowedPaths.has(req.path) || 
+      /\.(js|css)$/i.test(req.path)) {
+    return next();
+  }
+  return res.status(404).end();
+};
+app.use(staticWhitelist, express.static('./www'));
 
 console.log("Discord Tennis Game Activity Server is ON! Port :", PORT);
 httpServer.listen(PORT);
