@@ -1,4 +1,5 @@
 // server.js
+require('dotenv').config();
 const express = require('express');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
@@ -81,5 +82,5 @@ io.on('connection', (socket) => {
     winner = null;
   });
 });
-console.log("Discord Tennis Game Activity Server is ON!");
-httpServer.listen(3000);
+console.log("Discord Tennis Game Activity Server is ON!", process.env.PORT);
+httpServer.listen(parseInt(process.env.PORT));
