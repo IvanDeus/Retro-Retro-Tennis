@@ -3,7 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
-
+const PORT = parseInt(process.env.PORT);
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
@@ -82,5 +82,5 @@ io.on('connection', (socket) => {
     winner = null;
   });
 });
-console.log("Discord Tennis Game Activity Server is ON!", process.env.PORT);
-httpServer.listen(parseInt(process.env.PORT));
+console.log("Discord Tennis Game Activity Server is ON!", PORT);
+httpServer.listen(PORT);
