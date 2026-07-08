@@ -21,9 +21,11 @@ export class App implements OnInit {
   private discordSdk = new DiscordSDK(window.DISCORD_CLIENT_ID);
 
   async ngOnInit() {
-    await this.discordSdk.ready();
-    
-    // Request basic scopes to display player identities safely
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const isDiscordEnv = urlParams.has('frame_id') && urlParams.has('instance_id');
+    if (isDiscordEnv) {
+    await this.discordSdk.ready(); 
     const auth = await this.discordSdk.commands.authorize({
       client_id: window.DISCORD_CLIENT_ID,
       response_type: 'code',
@@ -43,4 +45,7 @@ export class App implements OnInit {
     // Bind authenticated client session details to WebSocket stream instances
     this.gameService.registerPlayerIdentity(avatarUrl);
   }
+   console.warn("Not in Discord environment, using mock data for UI debugging.");
+  }
+
 }
