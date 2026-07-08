@@ -1,0 +1,6 @@
+# ignore config file for security
+bun.lock
+node_modules/
+cert.cer
+key.key
+.env

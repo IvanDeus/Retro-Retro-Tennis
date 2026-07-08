@@ -1,0 +1,25 @@
+{
+  "name": "tennis-server",
+  "version": "1.0.0",
+  "description": "discord activity tennis game server",
+  "homepage": "https://github.com/IvanDeus/Retro-Retro-Tennis#readme",
+  "bugs": {
+    "url": "https://github.com/IvanDeus/Retro-Retro-Tennis/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IvanDeus/Retro-Retro-Tennis.git"
+  },
+  "license": "GPL-3.0",
+  "author": "",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3"
+  }
+}
