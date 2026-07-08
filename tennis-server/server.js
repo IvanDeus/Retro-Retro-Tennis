@@ -83,8 +83,7 @@ io.on('connection', (socket) => {
   });
 });
 // GET favicon & css & js from www/
-app.use('/favicon.ico', express.static('./www/favicon.ico'));
-app.use(/\.(css|js)$/, express.static('./www'));
+app.use(/\.(css|js|ico)$/, express.static('./www'));
 
 console.log("Discord Tennis Game Activity Server is ON! Port :", PORT);
 httpServer.listen(PORT);
