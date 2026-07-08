@@ -1,3 +1,4 @@
+// rrt.component.ts
 import { Component, ElementRef, ViewChild, HostListener, effect, inject, OnInit } from '@angular/core';
 import { GameService } from './game.service';
 import { StatsService } from './stats.service';
@@ -72,15 +73,15 @@ export class rrtComponent implements OnInit {
   onTouchStart(event: TouchEvent) {
     if (event.touches.length === 0 || this.gameService.gameState()?.winner) return;
     this.isDragging = true;
-    this.lastTouchX = event.touches.clientX;
+    this.lastTouchX = event.touches[0].clientX; 
     if (event.cancelable) event.preventDefault(); 
   }
 
   @HostListener('touchmove', ['$event'])
   onTouchMove(event: TouchEvent) {
     if (!this.isDragging || event.touches.length === 0) return;
-    const deltaX = event.touches.clientX - this.lastTouchX;
-    this.lastTouchX = event.touches.clientX;
+    const deltaX = event.touches[0].clientX - this.lastTouchX; 
+    this.lastTouchX = event.touches[0].clientX; 
     this.processMoveDelta(deltaX);
     if (event.cancelable) event.preventDefault();
   }
