@@ -1,3 +1,4 @@
+// app.ts
 import { Component, OnInit, inject } from '@angular/core';
 import { DiscordSDK } from '@discord/embedded-app-sdk';
 import { GameService } from './game.service';
