@@ -82,5 +82,5 @@ io.on('connection', (socket) => {
     winner = null;
   });
 });
-console.log("Discord Tennis Game Activity Server is ON!", PORT);
+console.log("Discord Tennis Game Activity Server is ON! Port :", PORT);
 httpServer.listen(PORT);
