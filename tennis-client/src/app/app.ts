@@ -9,16 +9,23 @@ import { rrtComponent } from './rrt.component';
   imports: [rrtComponent],
   template: `<app-rrt></app-rrt>`
 })
+
+declare global {
+  interface Window {
+    DISCORD_CLIENT_ID: string;
+  }
+}
+
 export class App implements OnInit {
   private gameService = inject(GameService);
-  private discordSdk = new DiscordSDK(import.meta.env.VITE_DISCORD_CLIENT_ID);
+  private discordSdk = new DiscordSDK(window.DISCORD_CLIENT_ID);
 
   async ngOnInit() {
     await this.discordSdk.ready();
     
     // Request basic scopes to display player identities safely
     const auth = await this.discordSdk.commands.authorize({
-      client_id: import.meta.env.VITE_DISCORD_CLIENT_ID,
+      client_id: window.DISCORD_CLIENT_ID,
       response_type: 'code',
       state: '',
       prompt: 'none',
