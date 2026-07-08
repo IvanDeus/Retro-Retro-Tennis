@@ -9,7 +9,7 @@ import { rrtComponent } from './rrt.component';
   imports: [rrtComponent],
   template: `<app-rrt></app-rrt>`
 })
-export class AppComponent implements OnInit {
+export class App implements OnInit {
   private gameService = inject(GameService);
   private discordSdk = new DiscordSDK(import.meta.env.VITE_DISCORD_CLIENT_ID);
 
