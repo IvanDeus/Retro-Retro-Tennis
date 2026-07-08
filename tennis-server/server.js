@@ -84,25 +84,35 @@ io.on('connection', (socket) => {
   });
 });
 // GET ONLY favicon & css & js from www/
-// 1. Whitelist middleware (only allow safe files)
-const staticWhitelist = (req, res, next) => {
-  const ext = path.extname(req.path).toLowerCase();
-  const basename = path.basename(req.path).toLowerCase();
-
-  const allowedExtensions = ['.js', '.css', '.ico', '.html'];
-  const allowedFiles = ['index.html', 'favicon.ico'];
-
-  if (allowedFiles.includes(basename) || allowedExtensions.includes(ext)) {
-    return next();
+// Exact-match static file definitions
+const STATIC_FILES = [
+  { pattern: "/favicon.ico", path: "./www/favicon.ico", mime: "image/x-icon" },
+  { pattern: "/", path: "./www/index.html", mime: "text/html; charset=utf-8" },
+  { pattern: "/index.html", path: "./www/index.html", mime: "text/html; charset=utf-8" },
+];
+// Simple helper for extension-based MIME + wildcard support
+function getStaticFileConfig(pathname) {
+  const exact = STATIC_FILES.find(item => item.pattern === pathname);
+  if (exact) return exact;
+  if (pathname.endsWith(".css")) {
+    return { path: `./www${pathname}`, mime: "text/css; charset=utf-8" };
   }
-  return res.status(404).send('Not Found');
-};
-// 2. Serve static files (this must come BEFORE any catch-all)
-app.use(staticWhitelist, express.static('./www'));
-// 3. Fallback to index.html for SPA / clean URLs (this must come AFTER static)
-app.get('*', (req, res) => {
+  if (pathname.endsWith(".js")) {
+    return { path: `./www${pathname}`, mime: "application/javascript; charset=utf-8" };
+  }
+  return null;
+}
+// Serve static files based on config
+app.get(/.*/, (req, res, next) => {
+  const config = getStaticFileConfig(req.path);
+  if (config) {
+    res.setHeader('Content-Type', config.mime);
+    return res.sendFile(path.join(__dirname, config.path));
+  }
   res.sendFile(path.join(__dirname, 'www', 'index.html'));
 });
 
-console.log("Discord Tennis Game Activity Server is ON! Port :", PORT);
-httpServer.listen(PORT);
+httpServer.listen(PORT, () => {
+  console.log(`Discord Tennis Game Activity Server is ON! Port:${PORT}`);
+});
+

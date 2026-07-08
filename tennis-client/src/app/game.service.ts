@@ -13,7 +13,7 @@ export class GameService {
   private processedMatchWinner: string | null = null;
 
   constructor() {
-    this.socket = io('http://localhost:3000'); 
+    this.socket = io('/'); 
     
     this.socket.on('init', (side: string) => this.playerSide.set(side));
     
@@ -29,7 +29,7 @@ export class GameService {
       const isLocalUserWinner = this.playerSide() === state.winner;
       this.statsService.recordMatchResult(isLocalUserWinner);
     } else if (!state.winner) {
-      this.processedMatchWinner = null; // Reset lock tracker upon rematch initialization
+      this.processedMatchWinner = null; 
     }
   }
 
