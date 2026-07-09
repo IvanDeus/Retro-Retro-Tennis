@@ -1,6 +1,13 @@
+// game.service.ts
 import { Injectable, signal, inject } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { StatsService } from './stats.service';
+// 1. Define the interface to match the object passed from app.ts
+export interface PlayerIdentity {
+  id: string;
+  username: string;
+  avatar: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class GameService {
@@ -32,9 +39,10 @@ export class GameService {
       this.processedMatchWinner = null; 
     }
   }
-
-  public registerPlayerIdentity(avatarUrl: string): void {
-    this.socket.emit('joinGame', { avatarUrl });
+  // 2. Update the method signature to accept the PlayerIdentity object
+  public registerPlayerIdentity(player: PlayerIdentity): void {
+    // 3. Emit the entire player object to the server
+    this.socket.emit('joinGame', player);
   }
 
   public updatePaddle(x: number): void {
