@@ -56,11 +56,17 @@ io.on('connection', (socket) => {
   if (Object.keys(players).length >= 2) return socket.disconnect();
   const playerIndex = !players['p1'] ? 'p1' : 'p2';
   
-  players[playerIndex] = { id: socket.id, x: 170, avatarUrl: '' };
+  // UPDATED: Added discordId and username to the initial player structure
+  players[playerIndex] = { id: socket.id, discordId: '', username: '', x: 170, avatarUrl: '' };
   socket.emit('init', playerIndex);
 
-  socket.on('joinGame', (data) => {
-    if (players[playerIndex]) players[playerIndex].avatarUrl = data.avatarUrl;
+  // UPDATED: Handle the new PlayerIdentity object structure
+  socket.on('joinGame', (playerData) => {
+    if (players[playerIndex]) {
+      players[playerIndex].discordId = playerData.id;
+      players[playerIndex].username = playerData.username;
+      players[playerIndex].avatarUrl = playerData.avatar; // Frontend sends 'avatar'
+    }
   });
 
   socket.on('movePaddle', (x) => {
@@ -83,6 +89,7 @@ io.on('connection', (socket) => {
     winner = null;
   });
 });
+
 // GET ONLY favicon & css & js from www/
 // Exact-match static file definitions
 const STATIC_FILES = [
@@ -90,6 +97,7 @@ const STATIC_FILES = [
   { pattern: "/", path: "./www/index.html", mime: "text/html; charset=utf-8" },
   { pattern: "/index.html", path: "./www/index.html", mime: "text/html; charset=utf-8" },
 ];
+
 // Simple helper for extension-based MIME + wildcard support
 function getStaticFileConfig(pathname) {
   const exact = STATIC_FILES.find(item => item.pattern === pathname);
@@ -102,6 +110,7 @@ function getStaticFileConfig(pathname) {
   }
   return null;
 }
+
 // Serve static files based on config
 app.get(/.*/, (req, res, next) => {
   const config = getStaticFileConfig(req.path);
@@ -115,4 +124,3 @@ app.get(/.*/, (req, res, next) => {
 httpServer.listen(PORT, () => {
   console.log(`Discord Tennis Game Activity Server is ON! Port:${PORT}`);
 });
-
