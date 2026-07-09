@@ -1,0 +1,28 @@
+.discord-warning {
+    position: fixed;
+    inset: 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    background: #202225;
+    color: white;
+
+    text-align: center;
+    padding: 30px;
+
+    font-family: sans-serif;
+}
+
+.discord-warning h2 {
+    color: #5865F2;
+    margin-bottom: 20px;
+}
+
+.discord-warning p {
+    max-width: 500px;
+    line-height: 1.5;
+    font-size: 18px;
+}
