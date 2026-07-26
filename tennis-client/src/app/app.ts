@@ -15,7 +15,7 @@ async function waitForDiscordReady(sdk: DiscordSDK, timeout = 5000) {
     return Promise.race([
         sdk.ready(),
         new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Discord ready() timeout")), timeout)
+            setTimeout(() => reject(new Error("Discord timeout")), timeout)
         )
     ]);
 }
@@ -25,15 +25,11 @@ async function waitForDiscordReady(sdk: DiscordSDK, timeout = 5000) {
   standalone: true,
   imports: [CommonModule, rrtComponent],
   template: `
-    <div *ngIf="!isDiscordEnv" class="discord-warning">
+    <div *ngIf="!isDiscordEnv" class="discord-warning" style="color: white;">
       <h2>⚠ Discord Required</h2>
-      <p>
-        This game is a <strong>Discord Activity</strong> and cannot be played
-        directly in a web browser.
-      </p>
+      <p>This game is a <strong>Discord Activity</strong> and cannot be played directly in a web browser.</p>
       <p>Please launch it from Discord.</p>
-      
-      <!-- Debug message to help identify the exact failure point -->
+     
       <p *ngIf="errorMessage" style="color: #ff4444; font-size: 0.9em; margin-top: 15px; background: rgba(255,0,0,0.1); padding: 10px; border-radius: 4px;">
         <strong>Debug Error:</strong> {{ errorMessage }}
       </p>
@@ -54,12 +50,11 @@ export class App implements OnInit {
     const isInsideDiscord = urlParams.has('frame_id');
     
     console.log("🔍 Is inside Discord (has frame_id)?", isInsideDiscord);
-    console.log("🔍 URL Search Params:", window.location.search);
     console.log("🔍 window.DISCORD_CLIENT_ID:", window.DISCORD_CLIENT_ID);
 
     if (isInsideDiscord) {
       if (!window.DISCORD_CLIENT_ID) {
-        this.errorMessage = "window.DISCORD_CLIENT_ID is undefined! Check your index.html";
+        this.errorMessage = "window.DISCORD_CLIENT_ID is undefined!";
         console.error("❌", this.errorMessage);
         return;
       }
@@ -82,24 +77,38 @@ export class App implements OnInit {
             prompt: 'none',
             scope: ['identify', 'guilds'],
         });
-        console.log("✅ Authorized successfully:", auth);
+        console.log("✅ Authorized successfully, received code");
 
+        // 1. Exchange the code for an access token via our backend
+        console.log("⏳ Exchanging code for access token...");
+        const tokenResponse = await fetch('/api/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: auth.code })
+        });
+
+        if (!tokenResponse.ok) {
+            const errText = await tokenResponse.text();
+            throw new Error(`Failed to exchange code: ${tokenResponse.status} - ${errText}`);
+        }
+
+        const tokenData = await tokenResponse.json();
+        const accessToken = tokenData.access_token;
+
+        // 2. Use the real access_token to fetch user data
         console.log("⏳ Fetching user data...");
-        const userResponse = await fetch(
-            'https://discord.com/api/users/@me',
-            {
-                headers: {
-                    Authorization: `Bearer ${auth.code}`
-                }
+        const userResponse = await fetch('https://discord.com/api/users/@me', {
+            headers: {
+                Authorization: `Bearer ${accessToken}`
             }
-        );
+        });
 
         if (!userResponse.ok) {
             throw new Error(`Failed to fetch user: ${userResponse.status} ${userResponse.statusText}`);
         }
 
         const userData = await userResponse.json();
-        console.log("✅ User data fetched:", userData);
+        console.log("✅ User data fetched:", userData.username);
 
         const avatarUrl = userData.avatar
             ? `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`
