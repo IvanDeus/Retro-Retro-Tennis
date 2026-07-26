@@ -15,7 +15,7 @@ async function waitForDiscordReady(sdk: DiscordSDK, timeout = 5000) {
     return Promise.race([
         sdk.ready(),
         new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Discord timeout")), timeout)
+            setTimeout(() => reject(new Error("Discord ready() timeout")), timeout)
         )
     ]);
 }
@@ -31,9 +31,11 @@ async function waitForDiscordReady(sdk: DiscordSDK, timeout = 5000) {
         This game is a <strong>Discord Activity</strong> and cannot be played
         directly in a web browser.
       </p>
-
-      <p>
-        Please launch it from Discord.
+      <p>Please launch it from Discord.</p>
+      
+      <!-- Debug message to help identify the exact failure point -->
+      <p *ngIf="errorMessage" style="color: #ff4444; font-size: 0.9em; margin-top: 15px; background: rgba(255,0,0,0.1); padding: 10px; border-radius: 4px;">
+        <strong>Debug Error:</strong> {{ errorMessage }}
       </p>
     </div>
     <app-rrt *ngIf="isDiscordEnv"></app-rrt>
@@ -41,25 +43,38 @@ async function waitForDiscordReady(sdk: DiscordSDK, timeout = 5000) {
 })
 export class App implements OnInit {
   isDiscordEnv = false;
+  errorMessage: string = '';
   private gameService = inject(GameService);
-  
-  // 1. Declare as nullable, do NOT instantiate here
   private discordSdk: DiscordSDK | null = null;
 
   async ngOnInit() {
-    // 2. Check if we are actually inside Discord by looking for the 'frame_id' param
+    console.log("🚀 App ngOnInit started");
+    
     const urlParams = new URLSearchParams(window.location.search);
     const isInsideDiscord = urlParams.has('frame_id');
+    
+    console.log("🔍 Is inside Discord (has frame_id)?", isInsideDiscord);
+    console.log("🔍 URL Search Params:", window.location.search);
+    console.log("🔍 window.DISCORD_CLIENT_ID:", window.DISCORD_CLIENT_ID);
 
     if (isInsideDiscord) {
+      if (!window.DISCORD_CLIENT_ID) {
+        this.errorMessage = "window.DISCORD_CLIENT_ID is undefined! Check your index.html";
+        console.error("❌", this.errorMessage);
+        return;
+      }
+
       try {
-        // 3. ONLY instantiate the SDK if we are confirmed to be in Discord
+        console.log("⏳ Initializing Discord SDK...");
         this.discordSdk = new DiscordSDK(window.DISCORD_CLIENT_ID);
         
+        console.log("⏳ Waiting for Discord SDK to be ready...");
         await waitForDiscordReady(this.discordSdk);
+        console.log("✅ Discord SDK is ready!");
 
         this.isDiscordEnv = true;
 
+        console.log("⏳ Authorizing with Discord...");
         const auth = await this.discordSdk.commands.authorize({
             client_id: window.DISCORD_CLIENT_ID,
             response_type: 'code',
@@ -67,7 +82,9 @@ export class App implements OnInit {
             prompt: 'none',
             scope: ['identify', 'guilds'],
         });
+        console.log("✅ Authorized successfully:", auth);
 
+        console.log("⏳ Fetching user data...");
         const userResponse = await fetch(
             'https://discord.com/api/users/@me',
             {
@@ -77,7 +94,12 @@ export class App implements OnInit {
             }
         );
 
+        if (!userResponse.ok) {
+            throw new Error(`Failed to fetch user: ${userResponse.status} ${userResponse.statusText}`);
+        }
+
         const userData = await userResponse.json();
+        console.log("✅ User data fetched:", userData);
 
         const avatarUrl = userData.avatar
             ? `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`
@@ -90,17 +112,17 @@ export class App implements OnInit {
             username: userData.username,
             avatar: avatarUrl
         });
+        console.log("✅ Player identity registered successfully. Game starting!");
+
       } catch (err) {
         this.isDiscordEnv = false;
-        console.warn(
-            "Discord SDK unavailable or failed to initialize. Blocking application startup.",
-            err
-        );
+        this.errorMessage = err instanceof Error ? err.message : String(err);
+        console.error("❌ Discord SDK initialization or authorization failed:", err);
       }
     } else {
-      // 4. Outside Discord: Safely skip SDK initialization and let the fallback UI render
       this.isDiscordEnv = false;
-      console.warn("Not in Discord environment. SDK initialization skipped.");
+      this.errorMessage = "Missing 'frame_id' in URL. Not running inside Discord.";
+      console.warn("⚠️ Not in Discord environment. SDK initialization skipped.");
     }
   }
 }
