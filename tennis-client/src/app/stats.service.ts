@@ -1,3 +1,4 @@
+// stats.service.ts
 import { Injectable, signal } from '@angular/core';
 
 export interface PlayerStats {
