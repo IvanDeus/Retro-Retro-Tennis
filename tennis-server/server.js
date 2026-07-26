@@ -5,6 +5,8 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const PORT = parseInt(process.env.PORT) || 3001;
 const path = require('path');
+const fs = require('fs'); // <-- 1. Added fs module to read the file
+
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
@@ -56,16 +58,14 @@ io.on('connection', (socket) => {
   if (Object.keys(players).length >= 2) return socket.disconnect();
   const playerIndex = !players['p1'] ? 'p1' : 'p2';
   
-  // Added discordId and username to the initial player structure
   players[playerIndex] = { id: socket.id, discordId: '', username: '', x: 170, avatarUrl: '' };
   socket.emit('init', playerIndex);
 
-  // Handle the new PlayerIdentity object structure
   socket.on('joinGame', (playerData) => {
     if (players[playerIndex]) {
       players[playerIndex].discordId = playerData.id;
       players[playerIndex].username = playerData.username;
-      players[playerIndex].avatarUrl = playerData.avatar; // Frontend sends 'avatar'
+      players[playerIndex].avatarUrl = playerData.avatar;
     }
   });
 
@@ -73,7 +73,6 @@ io.on('connection', (socket) => {
     if (players[playerIndex] && !winner) players[playerIndex].x = x;
   });
 
-  // Allows clients to trigger a new match session manually after a win
   socket.on('rematch', () => {
     if (winner) {
       score = { p1: 0, p2: 0 };
@@ -91,14 +90,12 @@ io.on('connection', (socket) => {
 });
 
 // GET ONLY favicon & css & js from www/
-// Exact-match static file definitions
 const STATIC_FILES = [
   { pattern: "/favicon.ico", path: "./www/favicon.ico", mime: "image/x-icon" },
   { pattern: "/", path: "./www/index.html", mime: "text/html; charset=utf-8" },
   { pattern: "/index.html", path: "./www/index.html", mime: "text/html; charset=utf-8" },
 ];
 
-// Simple helper for extension-based MIME + wildcard support
 function getStaticFileConfig(pathname) {
   const exact = STATIC_FILES.find(item => item.pattern === pathname);
   if (exact) return exact;
@@ -111,14 +108,40 @@ function getStaticFileConfig(pathname) {
   return null;
 }
 
-// Serve static files based on config
+// <-- 2. Helper function to serve index.html with injected DISCORD_CLIENT_ID
+function serveInjectedIndex(res) {
+  const filePath = path.join(__dirname, 'www', 'index.html');
+  let html = fs.readFileSync(filePath, 'utf8');
+  
+  const clientId = process.env.DISCORD_CLIENT_ID || 'YOUR_CLIENT_ID';
+  
+  // Option A: Replace the placeholder if you added it to index.html
+  if (html.includes('YOUR_DISCORD_CLIENT_ID_HERE')) {
+    html = html.replace('YOUR_DISCORD_CLIENT_ID_HERE', clientId);
+  } 
+  // Option B: Fallback injection right before </head> if placeholder is missing
+  else if (!html.includes('window.DISCORD_CLIENT_ID')) {
+    const scriptTag = `<script>\n    window.DISCORD_CLIENT_ID = "${clientId}";\n  </script>`;
+    html = html.replace('</head>', `${scriptTag}\n  </head>`);
+  }
+  
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.send(html);
+}
+
+// <-- 3. Updated route handler to use the helper
 app.get(/.*/, (req, res, next) => {
   const config = getStaticFileConfig(req.path);
   if (config) {
+    if (config.path.includes('index.html')) {
+      return serveInjectedIndex(res); // Inject for direct / or /index.html requests
+    }
     res.setHeader('Content-Type', config.mime);
     return res.sendFile(path.join(__dirname, config.path));
   }
-  res.sendFile(path.join(__dirname, 'www', 'index.html'));
+  
+  // Fallback for Angular routing (e.g., if user refreshes on /some-route)
+  serveInjectedIndex(res);
 });
 
 httpServer.listen(PORT, () => {
