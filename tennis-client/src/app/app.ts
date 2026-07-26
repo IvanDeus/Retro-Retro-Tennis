@@ -23,7 +23,7 @@ async function waitForDiscordReady(sdk: DiscordSDK, timeout = 5000) {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule,rrtComponent],
+  imports: [CommonModule, rrtComponent],
   template: `
     <div *ngIf="!isDiscordEnv" class="discord-warning">
       <h2>⚠ Discord Required</h2>
@@ -42,12 +42,20 @@ async function waitForDiscordReady(sdk: DiscordSDK, timeout = 5000) {
 export class App implements OnInit {
   isDiscordEnv = false;
   private gameService = inject(GameService);
-  private discordSdk = new DiscordSDK(window.DISCORD_CLIENT_ID);
+  
+  // 1. Declare as nullable, do NOT instantiate here
+  private discordSdk: DiscordSDK | null = null;
 
-async ngOnInit() {
+  async ngOnInit() {
+    // 2. Check if we are actually inside Discord by looking for the 'frame_id' param
+    const urlParams = new URLSearchParams(window.location.search);
+    const isInsideDiscord = urlParams.has('frame_id');
 
-    try {
-
+    if (isInsideDiscord) {
+      try {
+        // 3. ONLY instantiate the SDK if we are confirmed to be in Discord
+        this.discordSdk = new DiscordSDK(window.DISCORD_CLIENT_ID);
+        
         await waitForDiscordReady(this.discordSdk);
 
         this.isDiscordEnv = true;
@@ -77,17 +85,22 @@ async ngOnInit() {
                 ? `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(userData.id) >> 22n) % 6}.png`
                 : `https://cdn.discordapp.com/embed/avatars/${Number(userData.discriminator) % 5}.png`;
 
-       this.gameService.registerPlayerIdentity({
-          id: userData.id,
-          username: userData.username,
-          avatar: avatarUrl
-      });
-    } catch (err) {
+        this.gameService.registerPlayerIdentity({
+            id: userData.id,
+            username: userData.username,
+            avatar: avatarUrl
+        });
+      } catch (err) {
         this.isDiscordEnv = false;
         console.warn(
-            "Discord SDK unavailable. Blocking application startup.",
+            "Discord SDK unavailable or failed to initialize. Blocking application startup.",
             err
         );
+      }
+    } else {
+      // 4. Outside Discord: Safely skip SDK initialization and let the fallback UI render
+      this.isDiscordEnv = false;
+      console.warn("Not in Discord environment. SDK initialization skipped.");
     }
-}
+  }
 }
