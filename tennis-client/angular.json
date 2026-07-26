@@ -54,9 +54,6 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
-          "options": {
-            "disableHostCheck": true
-           },
           "configurations": {
             "production": {
               "buildTarget": "tennis-client:build:production"
