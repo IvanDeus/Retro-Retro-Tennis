@@ -5,30 +5,30 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const PORT = parseInt(process.env.PORT) || 3001;
 const path = require('path');
-const fs = require('fs'); // <-- 1. Added fs module to read the file
+const fs = require('fs');
 
 const app = express();
+app.use(express.json());
+
 const httpServer = createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
 
 let players = {}; 
 let score = { p1: 0, p2: 0 };
 let ball = { x: 170, y: 300, vx: 3, vy: 4 };
-let winner = null; // Tracks 'p1' or 'p2' when a match finishes
+let winner = null;
 
 function resetBall() {
   ball = { x: 170, y: 300, vx: (Math.random() > 0.5 ? 3 : -3), vy: (Math.random() > 0.5 ? 4 : -4) };
 }
 
 setInterval(() => {
-  // Only execute game loop movement if there are 2 players and no one has won yet
   if (Object.keys(players).length === 2 && !winner) {
     ball.x += ball.vx;
     ball.y += ball.vy;
 
     if (ball.x <= 8 || ball.x >= 332) ball.vx *= -1;
 
-    // --- Top Boundary (Player 1) ---
     if (ball.y <= 30) {
       if (players.p1 && ball.x >= players.p1.x - 40 && ball.x <= players.p1.x + 40) {
         ball.vy = Math.abs(ball.vy);
@@ -39,7 +39,6 @@ setInterval(() => {
       }
     }
 
-    // --- Bottom Boundary (Player 2) ---
     if (ball.y >= 570) {
       if (players.p2 && ball.x >= players.p2.x - 40 && ball.x <= players.p2.x + 40) {
         ball.vy = -Math.abs(ball.vy);
@@ -89,7 +88,41 @@ io.on('connection', (socket) => {
   });
 });
 
-// GET ONLY favicon & css & js from www/
+// <-- 2. ADD THIS NEW ENDPOINT: Exchanges the auth code for an access token
+app.post('/api/token', async (req, res) => {
+  const { code } = req.body;
+  if (!code) {
+    return res.status(400).json({ error: 'Authorization code is required' });
+  }
+
+  const params = new URLSearchParams({
+    client_id: process.env.DISCORD_CLIENT_ID,
+    client_secret: process.env.DISCORD_CLIENT_SECRET,
+    grant_type: 'authorization_code',
+    code: code,
+  });
+
+  try {
+    const response = await fetch('https://discord.com/api/oauth2/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params,
+    });
+
+    const data = await response.json();
+
+    if (data.access_token) {
+      res.json({ access_token: data.access_token });
+    } else {
+      console.error('Discord token exchange failed:', data);
+      res.status(500).json({ error: 'Failed to exchange code for token', details: data });
+    }
+  } catch (error) {
+    console.error('Error exchanging code:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 const STATIC_FILES = [
   { pattern: "/favicon.ico", path: "./www/favicon.ico", mime: "image/x-icon" },
   { pattern: "/", path: "./www/index.html", mime: "text/html; charset=utf-8" },
@@ -99,28 +132,19 @@ const STATIC_FILES = [
 function getStaticFileConfig(pathname) {
   const exact = STATIC_FILES.find(item => item.pattern === pathname);
   if (exact) return exact;
-  if (pathname.endsWith(".css")) {
-    return { path: `./www${pathname}`, mime: "text/css; charset=utf-8" };
-  }
-  if (pathname.endsWith(".js")) {
-    return { path: `./www${pathname}`, mime: "application/javascript; charset=utf-8" };
-  }
+  if (pathname.endsWith(".css")) return { path: `./www${pathname}`, mime: "text/css; charset=utf-8" };
+  if (pathname.endsWith(".js")) return { path: `./www${pathname}`, mime: "application/javascript; charset=utf-8" };
   return null;
 }
 
-// <-- 2. Helper function to serve index.html with injected DISCORD_CLIENT_ID
 function serveInjectedIndex(res) {
   const filePath = path.join(__dirname, 'www', 'index.html');
   let html = fs.readFileSync(filePath, 'utf8');
-  
   const clientId = process.env.DISCORD_CLIENT_ID || 'YOUR_CLIENT_ID';
   
-  // Option A: Replace the placeholder if you added it to index.html
   if (html.includes('YOUR_DISCORD_CLIENT_ID_HERE')) {
     html = html.replace('YOUR_DISCORD_CLIENT_ID_HERE', clientId);
-  } 
-  // Option B: Fallback injection right before </head> if placeholder is missing
-  else if (!html.includes('window.DISCORD_CLIENT_ID')) {
+  } else if (!html.includes('window.DISCORD_CLIENT_ID')) {
     const scriptTag = `<script>\n    window.DISCORD_CLIENT_ID = "${clientId}";\n  </script>`;
     html = html.replace('</head>', `${scriptTag}\n  </head>`);
   }
@@ -129,18 +153,13 @@ function serveInjectedIndex(res) {
   res.send(html);
 }
 
-// <-- 3. Updated route handler to use the helper
 app.get(/.*/, (req, res, next) => {
   const config = getStaticFileConfig(req.path);
   if (config) {
-    if (config.path.includes('index.html')) {
-      return serveInjectedIndex(res); // Inject for direct / or /index.html requests
-    }
+    if (config.path.includes('index.html')) return serveInjectedIndex(res);
     res.setHeader('Content-Type', config.mime);
     return res.sendFile(path.join(__dirname, config.path));
   }
-  
-  // Fallback for Angular routing (e.g., if user refreshes on /some-route)
   serveInjectedIndex(res);
 });
 
