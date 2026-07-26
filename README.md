@@ -4,5 +4,6 @@ Retro Classic Table Tennis Discord Activity Web App
 ```
 cd tennis-server
 cp dot-env .env
+node server.js
 ```
 2026 [ ivan deus ]
