@@ -17,10 +17,10 @@ import { StatsService } from './stats.service';
       <div class="canvas-wrapper">
         <canvas #gameCanvas width="340" height="600"></canvas>
 
-        <!-- NEW: Waiting for Opponent Overlay -->
+        <!-- Waiting for Opponent Overlay -->
         @if (gameService.isWaiting()) {
           <div class="overlay-card waiting-overlay">
-            <h2>⏳ Waiting for opponent...</h2>
+            <h2>⏳ Waiting...</h2>
             <p>Share the activity link in your server or invite a friend!</p>
             <div class="loading-spinner"></div>
           </div>
@@ -29,34 +29,14 @@ import { StatsService } from './stats.service';
         <!-- Match Over Visual Overlay Card View -->
         @if (gameService.gameState()?.winner) {
           <div class="overlay-card">
-            <h2>{{ gameService.playerSide() === gameService.gameState().winner ? 'VICTORY' : 'DEFEAT' }}</h2>
+            <h2>{{ gameService.playerSide() === gameService.gameState().winner ? '🏆 VICTORY' : '💀 DEFEAT' }}</h2>
             <p>Score Matrix finalized at 21 Points</p>
             <button (click)="onRematchClick()">Play Again</button>
           </div>
         }
       </div>
     </div>
-  `,
-  styles: [`
-    .waiting-overlay {
-      background: rgba(15, 23, 42, 0.95) !important;
-      border: 2px solid rgba(59, 130, 246, 0.5) !important;
-    }
-    .loading-spinner {
-      border: 4px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      border-top: 4px solid #ffffff;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 20px auto 0;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    /* Add your other existing styles here */
-  `]
+  `
 })
 export class rrtComponent implements OnInit {
   @ViewChild('gameCanvas', { static: true }) canvas!: ElementRef<HTMLCanvasElement>;
@@ -83,7 +63,6 @@ export class rrtComponent implements OnInit {
 
   @HostListener('mousedown', ['$event'])
   onMouseDown(event: MouseEvent) {
-    // Freeze actions if match is finalized OR waiting for opponent
     if (this.gameService.gameState()?.winner || this.gameService.isWaiting()) return; 
     this.isDragging = true;
     this.lastTouchX = event.clientX;
@@ -101,7 +80,6 @@ export class rrtComponent implements OnInit {
 
   @HostListener('touchstart', ['$event'])
   onTouchStart(event: TouchEvent) {
-    // Freeze actions if match is finalized OR waiting for opponent
     if (event.touches.length === 0 || this.gameService.gameState()?.winner || this.gameService.isWaiting()) return;
     this.isDragging = true;
     this.lastTouchX = event.touches[0].clientX; 
@@ -165,12 +143,15 @@ export class rrtComponent implements OnInit {
     const localX = rawLocal ? (isP2 ? 340 - rawLocal.x : rawLocal.x) : 170;
     const remoteX = rawRemote ? (isP2 ? 340 - rawRemote.x : rawRemote.x) : 170;
     
-    // Ensure ball exists before drawing (prevents errors if state is partial)
     const ballX = state.ball ? (isP2 ? 340 - state.ball.x : state.ball.x) : 170;
     const ballY = state.ball ? (isP2 ? 600 - state.ball.y : state.ball.y) : 300;
 
-    // Render Dynamic Scores
-    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+    // ==========================================
+    // RENDER HIGH VISIBILITY SCORES IN THE MIDDLE
+    // ==========================================
+    this.ctx.shadowColor = 'rgba(0, 0, 0, 0.9)'; // Dark drop shadow
+    this.ctx.shadowBlur = 12;                    // Blur radius for readability
+    this.ctx.fillStyle = '#ffffff';              // Solid bright white
     this.ctx.font = 'bold 54px monospace';
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
@@ -180,6 +161,11 @@ export class rrtComponent implements OnInit {
 
     this.ctx.fillText(remoteScore.toString(), 170, 180);
     this.ctx.fillText(localScore.toString(), 170, 420);
+
+    // Reset shadow before drawing game elements so they don't get blurry shadows
+    this.ctx.shadowBlur = 0;
+    this.ctx.shadowColor = 'transparent';
+    // ==========================================
 
     this.ctx.fillStyle = '#FFFFFF';
 
