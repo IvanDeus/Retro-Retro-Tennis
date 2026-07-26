@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --port 4300 --allowed-hosts true",
-    "build": "ng build",
+    "build": "ng build && mv dist/tennis-client/browser/* ../tennis-server/www/",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
