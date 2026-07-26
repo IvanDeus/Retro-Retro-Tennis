@@ -56,11 +56,11 @@ io.on('connection', (socket) => {
   if (Object.keys(players).length >= 2) return socket.disconnect();
   const playerIndex = !players['p1'] ? 'p1' : 'p2';
   
-  // UPDATED: Added discordId and username to the initial player structure
+  // Added discordId and username to the initial player structure
   players[playerIndex] = { id: socket.id, discordId: '', username: '', x: 170, avatarUrl: '' };
   socket.emit('init', playerIndex);
 
-  // UPDATED: Handle the new PlayerIdentity object structure
+  // Handle the new PlayerIdentity object structure
   socket.on('joinGame', (playerData) => {
     if (players[playerIndex]) {
       players[playerIndex].discordId = playerData.id;
