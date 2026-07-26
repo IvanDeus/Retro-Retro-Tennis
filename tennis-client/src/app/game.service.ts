@@ -1,8 +1,8 @@
 // game.service.ts
-import { Injectable, signal, inject } from '@angular/core';
+import { Injectable, signal, inject, computed } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { StatsService } from './stats.service';
-// 1. Define the interface to match the object passed from app.ts
+
 export interface PlayerIdentity {
   id: string;
   username: string;
@@ -16,6 +16,19 @@ export class GameService {
 
   public playerSide = signal<string>('');
   public gameState = signal<any>(null);
+  
+  // NEW: Automatically calculates if we are waiting based on the game state
+  public isWaiting = computed(() => {
+    const state = this.gameState();
+    // If state is null, or players object is missing, we are waiting
+    if (!state || !state.players) return true;
+    
+    // Check if either player slot is missing or lacks an ID (hasn't joined yet)
+    const p1Missing = !state.players.p1 || !state.players.p1.id;
+    const p2Missing = !state.players.p2 || !state.players.p2.id;
+    
+    return p1Missing || p2Missing;
+  });
   
   private processedMatchWinner: string | null = null;
 
@@ -39,13 +52,14 @@ export class GameService {
       this.processedMatchWinner = null; 
     }
   }
-  // 2. Update the method signature to accept the PlayerIdentity object
+
   public registerPlayerIdentity(player: PlayerIdentity): void {
-    // 3. Emit the entire player object to the server
     this.socket.emit('joinGame', player);
   }
 
   public updatePaddle(x: number): void {
+    // NEW: Prevent sending paddle moves to server while waiting for opponent
+    if (this.isWaiting()) return; 
     this.socket.emit('movePaddle', x);
   }
 
