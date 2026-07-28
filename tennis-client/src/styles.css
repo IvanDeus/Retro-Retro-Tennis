@@ -45,7 +45,7 @@ canvas {
   justify-content: space-around;
   padding: 8px 0;
   background-color: #1a1a1a;
-  color: #ffffff; /* Updated to bright white */
+  color: #ffffff;
   font-weight: bold;
   font-size: 14px;
   border-radius: 6px 6px 0 0;
@@ -53,6 +53,7 @@ canvas {
   border-bottom: none;
   box-sizing: border-box;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  z-index: 8;
 }
 
 .canvas-wrapper {
@@ -69,7 +70,7 @@ canvas {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(6px); /* Blurs the game behind for perfect readability */
+  backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   display: flex;
   flex-direction: column;
@@ -82,6 +83,7 @@ canvas {
   padding: 20px;
   box-sizing: border-box;
   z-index: 10;
+  pointer-events: auto;
 }
 
 .overlay-card h2 {
@@ -89,7 +91,7 @@ canvas {
   margin: 0 0 12px 0;
   letter-spacing: 2px;
   color: #ffffff;
-  text-shadow: 0 4px 8px rgba(0, 0, 0, 1); /* Strong shadow to pop over play field */
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 1);
 }
 
 .overlay-card p {
