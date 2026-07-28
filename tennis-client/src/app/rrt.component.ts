@@ -27,13 +27,13 @@ import { StatsService } from './stats.service';
         }
 
         <!-- Match Over Visual Overlay Card View -->
-        @if (gameService.gameState()?.winner) {
-          <div class="overlay-card">
-            <h2>{{ gameService.playerSide() === gameService.gameState().winner ? '🏆 VICTORY' : '💀 DEFEAT' }}</h2>
-            <p>Score Matrix finalized at 21 Points</p>
-            <button (click)="onRematchClick()">Play Again</button>
-          </div>
-        }
+       @if (gameService.gameState()?.winner) {
+      <div class="overlay-card" [ngClass]="gameService.playerSide() === gameService.gameState()?.winner ? 'victory-overlay' : 'defeat-overlay'">
+        <h2>{{ gameService.playerSide() === gameService.gameState()?.winner ? '🏆 VICTORY' : '💀 DEFEAT' }}</h2>
+        <p>Score Matrix finalized at 21 Points</p>
+        <button (click)="onRematchClick()">Play Again</button>
+      </div>
+      }
       </div>
     </div>
   `
