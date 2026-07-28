@@ -10,7 +10,15 @@ html, body {
   justify-content: center;
   align-items: center;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  touch-action: none; /* Disables double-tap zoom delay */
+  touch-action: none; 
+}
+
+app-root, app-rrt {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
 }
 
 /* Mobile-first responsive wrapper container */
@@ -35,6 +43,7 @@ canvas {
   image-rendering: pixelated;
   max-width: 100%;
   max-height: 100%;
+  box-sizing: border-box;
 }
 
 /* Career ledger statistics layout rules */
@@ -62,13 +71,13 @@ canvas {
   height: 600px;
 }
 
-/* Match Completed & Waiting overlay alignment configurations */
 .overlay-card {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
+  z-index: 10;
   background-color: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -82,7 +91,6 @@ canvas {
   text-align: center;
   padding: 20px;
   box-sizing: border-box;
-  z-index: 10;
   pointer-events: auto;
 }
 
