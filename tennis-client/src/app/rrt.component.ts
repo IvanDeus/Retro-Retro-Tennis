@@ -7,6 +7,7 @@ import { StatsService } from './stats.service';
 @Component({
   selector: 'app-rrt',
   standalone: true,
+  imports: [NgClass],
   template: `
     <div class="game-container">
       <!-- Historical Performance Ledger Banner Display -->
