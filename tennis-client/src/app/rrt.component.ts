@@ -1,5 +1,6 @@
 // rrt.component.ts
 import { Component, ElementRef, ViewChild, HostListener, effect, inject, OnInit } from '@angular/core';
+import { NgClass } from '@angular/common'; 
 import { GameService } from './game.service';
 import { StatsService } from './stats.service';
 
