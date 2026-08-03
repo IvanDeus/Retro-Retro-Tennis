@@ -17,16 +17,13 @@ export class GameService {
   public playerSide = signal<string>('');
   public gameState = signal<any>(null);
   
-  // NEW: Automatically calculates if we are waiting based on the game state
+  // Automatically calculates if we are waiting based on the game state
   public isWaiting = computed(() => {
     const state = this.gameState();
-    // If state is null, or players object is missing, we are waiting
     if (!state || !state.players) return true;
-    
     // Check if either player slot is missing or lacks an ID (hasn't joined yet)
     const p1Missing = !state.players.p1 || !state.players.p1.id;
     const p2Missing = !state.players.p2 || !state.players.p2.id;
-    
     return p1Missing || p2Missing;
   });
   
@@ -58,7 +55,7 @@ export class GameService {
   }
 
   public updatePaddle(x: number): void {
-    // NEW: Prevent sending paddle moves to server while waiting for opponent
+    // Prevent sending paddle moves to server while waiting for opponent
     if (this.isWaiting()) return; 
     this.socket.emit('movePaddle', x);
   }
