@@ -22,31 +22,72 @@ function resetBall() {
   ball = { x: 170, y: 300, vx: (Math.random() > 0.5 ? 3 : -3), vy: (Math.random() > 0.5 ? 4 : -4) };
 }
 
+const BALL_RADIUS = 8;
+const PADDLE_HALF_WIDTH = 40;
+const PADDLE_HEIGHT = 15;
+const P1_PADDLE_TOP = 15;
+const P2_PADDLE_TOP = 570;
+const FIELD_WIDTH = 340;
+const FIELD_HEIGHT = 600;
+const MAX_SPEED = 9;
+
 setInterval(() => {
   if (Object.keys(players).length === 2 && !winner) {
     ball.x += ball.vx;
     ball.y += ball.vy;
 
-    if (ball.x <= 8 || ball.x >= 332) ball.vx *= -1;
+    // --- Wall bounces (clamp to prevent sticking) ---
+    if (ball.x - BALL_RADIUS <= 0) {
+      ball.x = BALL_RADIUS;
+      ball.vx = Math.abs(ball.vx);
+    } else if (ball.x + BALL_RADIUS >= FIELD_WIDTH) {
+      ball.x = FIELD_WIDTH - BALL_RADIUS;
+      ball.vx = -Math.abs(ball.vx);
+    }
 
-    if (ball.y <= 30) {
-      if (players.p1 && ball.x >= players.p1.x - 40 && ball.x <= players.p1.x + 40) {
-        ball.vy = Math.abs(ball.vy);
-      } else if (ball.y <= 0) {
-        score.p2 += 1;
-        if (score.p2 >= 21) winner = 'p2';
-        resetBall();
+    // --- P1 (top) collision: only if ball is moving UP ---
+    if (ball.vy < 0) {
+      const p1Bottom = P1_PADDLE_TOP + PADDLE_HEIGHT;
+      // Check vertical overlap: ball intersects paddle y-range
+      if (ball.y - BALL_RADIUS <= p1Bottom && ball.y + BALL_RADIUS >= P1_PADDLE_TOP) {
+        // Check horizontal overlap: ball center within paddle width + ball radius
+        if (players.p1 && Math.abs(ball.x - players.p1.x) <= PADDLE_HALF_WIDTH + BALL_RADIUS) {
+          ball.vy = Math.abs(ball.vy);
+          // Push ball just below paddle to prevent multi-frame re-collision
+          ball.y = p1Bottom + BALL_RADIUS;
+        }
       }
     }
 
-    if (ball.y >= 570) {
-      if (players.p2 && ball.x >= players.p2.x - 40 && ball.x <= players.p2.x + 40) {
-        ball.vy = -Math.abs(ball.vy);
-      } else if (ball.y >= 600) {
-        score.p1 += 1;
-        if (score.p1 >= 21) winner = 'p1';
-        resetBall();
+    // P1 miss: ball fully exited top of screen
+    if (ball.y + BALL_RADIUS <= 0) {
+      score.p2 += 1;
+      if (score.p2 >= 21) winner = 'p2';
+      resetBall();
+    }
+
+    // --- P2 (bottom) collision: only if ball is moving DOWN ---
+    if (ball.vy > 0) {
+      const p2Bottom = P2_PADDLE_TOP + PADDLE_HEIGHT;
+      if (ball.y + BALL_RADIUS >= P2_PADDLE_TOP && ball.y - BALL_RADIUS <= p2Bottom) {
+        if (players.p2 && Math.abs(ball.x - players.p2.x) <= PADDLE_HALF_WIDTH + BALL_RADIUS) {
+          ball.vy = -Math.abs(ball.vy);
+          // Push ball just above paddle
+          ball.y = P2_PADDLE_TOP - BALL_RADIUS;          
+        // Inside paddle hit blocks, after flipping vy:
+        const speed = Math.min(Math.sqrt(ball.vx**2 + ball.vy**2) * 1.03, MAX_SPEED);
+        const angle = Math.atan2(ball.vy, ball.vx);
+        ball.vx = Math.cos(angle) * speed;
+        ball.vy = Math.sin(angle) * speed;
+        }
       }
+    }
+
+    // P2 miss: ball fully exited bottom of screen
+    if (ball.y - BALL_RADIUS >= FIELD_HEIGHT) {
+      score.p1 += 1;
+      if (score.p1 >= 21) winner = 'p1';
+      resetBall();
     }
 
     io.emit('gameState', { ball, players, score, winner });
