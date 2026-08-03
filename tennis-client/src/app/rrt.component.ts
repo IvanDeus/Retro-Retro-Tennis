@@ -124,7 +124,6 @@ export class rrtComponent implements OnInit {
   private drawGame(state: any) {
     this.ctx.clearRect(0, 0, 340, 600);
     
-    // Middle Boundary Net line
     this.ctx.strokeStyle = '#222222';
     this.ctx.lineWidth = 4;
     this.ctx.beginPath();
@@ -148,29 +147,6 @@ export class rrtComponent implements OnInit {
     const ballX = state.ball ? (isP2 ? 340 - state.ball.x : state.ball.x) : 170;
     const ballY = state.ball ? (isP2 ? 600 - state.ball.y : state.ball.y) : 300;
 
-    // ==========================================
-    // RENDER HIGH VISIBILITY SCORES IN THE MIDDLE
-    // ==========================================
-    this.ctx.shadowColor = 'rgba(0, 0, 0, 0.9)'; // Dark drop shadow
-    this.ctx.shadowBlur = 12;                    // Blur radius for readability
-    this.ctx.fillStyle = '#ffffff';              // Solid bright white
-    this.ctx.font = 'bold 54px monospace';
-    this.ctx.textAlign = 'center';
-    this.ctx.textBaseline = 'middle';
-
-    const localScore = state.score ? (isP2 ? state.score.p2 : state.score.p1) : 0;
-    const remoteScore = state.score ? (isP2 ? state.score.p1 : state.score.p2) : 0;
-
-    this.ctx.fillText(remoteScore.toString(), 170, 180);
-    this.ctx.fillText(localScore.toString(), 170, 420);
-
-    // Reset shadow before drawing game elements so they don't get blurry shadows
-    this.ctx.shadowBlur = 0;
-    this.ctx.shadowColor = 'transparent';
-    // ==========================================
-
-    this.ctx.fillStyle = '#FFFFFF';
-
     // Draw Local (Bottom)
     if (rawLocal) {
       this.ctx.fillRect(localX - 40, 570, 80, 15);
@@ -191,5 +167,21 @@ export class rrtComponent implements OnInit {
       this.ctx.arc(ballX, ballY, 8, 0, Math.PI * 2);
       this.ctx.fill();
     }
+
+    // score
+    this.ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+    this.ctx.shadowBlur = 12;   
+    this.ctx.fillStyle = '#ffffff';   
+    this.ctx.font = 'bold 54px monospace';
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+    const localScore = state.score ? (isP2 ? state.score.p2 : state.score.p1) : 0;
+    const remoteScore = state.score ? (isP2 ? state.score.p1 : state.score.p2) : 0;
+    this.ctx.fillText(remoteScore.toString(), 170, 180);
+    this.ctx.fillText(localScore.toString(), 170, 420);
+    this.ctx.shadowBlur = 0;
+    this.ctx.shadowColor = 'transparent';
+    this.ctx.fillStyle = '#FFFFFF';
+    
   }
 }
